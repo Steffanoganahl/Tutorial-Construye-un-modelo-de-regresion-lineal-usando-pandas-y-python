@@ -3,25 +3,25 @@ engine = db_connect()
 
 # your code here
 
-
 import pandas as pd
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt 
 from scipy import stats
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, Lasso
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.feature_selection import chi2, SelectKBest
 from sklearn.model_selection import train_test_split
 
-
 #Imported Necessary Libraries // Librerias necesarias para el proyecto. 
+
 
 # Load Database / Cargar base de datos.
 df = pd.read_csv('/workspaces/Tutorial-Construye-un-modelo-de-regresion-lineal-usando-pandas-y-python/data/raw/demographic_health_data.csv')
 total_data = df 
 total_data.head()
+
 
 print(total_data.columns.tolist())
 # Print columns to select the target variable for the health study due to socioeconomics issues. / Imprimir las columnas para seleccionar la variable
@@ -30,18 +30,22 @@ print(total_data.columns.tolist())
 #The chosen variable it is "anycondition_prevalence" (now used as target), because it resumes all possible health problems of the population / La 
 # variable elegida es "anycondition_prevalence" (ahora usada como objetivo), porque resume todos los posibles problemas de salud de la población.
 
+
 # Database features / Características de la base de datos
 print(total_data.shape)
 print(total_data.describe())
 print(total_data.info())
+
 
 #Eliminate duplicates / Eliminar duplicados. 
 total_data[total_data.duplicated(keep=False)]
 total_data = total_data.drop_duplicates()
 total_data.shape
 
+
 #Check for null values / Verificar valores nulos.
 total_data.isnull().sum()
+
 
 #Determinate irrelevant features / Determinar características irrelevantes.
 # As we chose "anycondition_prevalence" as target variable, we will eliminate the features and variables linked to any ohter case. 
@@ -121,6 +125,8 @@ print(f"\nDimensiones: {total_data.shape}")
 print(total_data.head())
 
 
+# Analysis on categorical variables / Analisis en variables categoricas
+
 fig, axis = plt.subplots(1, 1, figsize=(8, 5))
 
 # Urban-rural classification is the main categorical variable / La clasificación urbano-rural es la variable categórica principal
@@ -131,6 +137,9 @@ plt.tight_layout()
 
 # Show the plot / Mostrar el gráfico
 plt.show()
+
+
+# Analysis on numeric variables / Analisis en variables numericas
 
 fig, axis = plt.subplots(4, 2, figsize = (12, 16), gridspec_kw = {"height_ratios": [6, 1, 6, 1]})
 
@@ -151,6 +160,7 @@ plt.tight_layout()
 
 # Show the plot / Mostrar el gráfico
 plt.show()
+
 
 # Numerical - Numerical Analysis / Análisis numérico - numérico
 
@@ -175,6 +185,9 @@ plt.tight_layout()
 
 # Show the plot / Mostrar el gráfico
 plt.show()
+
+
+# Categorical-categorical analysis / Analisis categorico-categorico
 
 # Map states to US Census regions / Mapear estados a regiones censales de EE.UU.
 census_region_map = {
@@ -201,6 +214,8 @@ sns.countplot(data = total_data, x = "Urban_rural_code", hue = "census_region")
 # Show the plot / Mostrar el gráfico
 plt.show()
 
+
+# Numerical-categorical analysis (complete) / Analisis numerico-categorico (completo)
 
 # Factorize the categorical variables / Factorizar las variables categóricas
 total_data["COUNTY_NAME"]    = pd.factorize(total_data["COUNTY_NAME"])[0]
@@ -231,6 +246,8 @@ plt.tight_layout()
 plt.show()
 
 
+# Analysing all the Data at Once
+
 # Pairplot restricted to the most informative variables / Pairplot restringido a las variables más informativas
 pairplot_vars = [
     "anycondition_prevalence",
@@ -243,9 +260,12 @@ pairplot_vars = [
 ]
 
 sns.pairplot(data = total_data[pairplot_vars])
+plt.show()
+
+
+# Outlier analysis / Analisis de valores atípicos.
 
 total_data.describe()
-
 
 fig, axes = plt.subplots(2, 3, figsize = (15, 10))
 
@@ -257,16 +277,16 @@ sns.boxplot(ax = axes[1, 1], data = total_data, y = "Active Physicians per 10000
 sns.boxplot(ax = axes[1, 2], data = total_data, y = "Percent of Population Aged 60+")
 
 plt.tight_layout()
-
 plt.show()
 
+
+# Outlier detection for anycondition_prevalence / Valores atípicos para 'anycondition_prevalence'
 
 # Stats for anycondition_prevalence / Estadísticas para anycondition_prevalence
 anycondition_stats = total_data["anycondition_prevalence"].describe()
 anycondition_stats
 
 # IQR for anycondition_prevalence / Rango intercuartílico para anycondition_prevalence
-
 anycondition_iqr = anycondition_stats["75%"] - anycondition_stats["25%"]
 upper_limit = anycondition_stats["75%"] + 1.5 * anycondition_iqr
 lower_limit = anycondition_stats["25%"] - 1.5 * anycondition_iqr
@@ -274,15 +294,16 @@ lower_limit = anycondition_stats["25%"] - 1.5 * anycondition_iqr
 print(f"The upper and lower limits for finding outliers are {round(upper_limit, 2)} and {round(lower_limit, 2)}, with an interquartile range of {round(anycondition_iqr, 2)}")
 
 # Clean the outliers / Limpiar los outliers
-
 total_data = total_data[total_data["anycondition_prevalence"] > 0]
+
+
+# Outlier detection for PCTPOVALL_2018 / Valores atípicos para 'PCTPOVALL_2018'
 
 # Stats for PCTPOVALL_2018 / Estadísticas para PCTPOVALL_2018
 pctpov_stats = total_data["PCTPOVALL_2018"].describe()
 pctpov_stats
 
 # IQR for PCTPOVALL_2018 / Rango intercuartílico para PCTPOVALL_2018
-
 pctpov_iqr = pctpov_stats["75%"] - pctpov_stats["25%"]
 upper_limit = pctpov_stats["75%"] + 1.5 * pctpov_iqr
 lower_limit = pctpov_stats["25%"] - 1.5 * pctpov_iqr
@@ -290,39 +311,44 @@ lower_limit = pctpov_stats["25%"] - 1.5 * pctpov_iqr
 print(f"The upper and lower limits for finding outliers are {round(upper_limit, 2)} and {round(lower_limit, 2)}, with an interquartile range of {round(pctpov_iqr, 2)}")
 
 # Clean the outliers / Limpiar los outliers
-
 total_data = total_data[total_data["PCTPOVALL_2018"] <= upper_limit]
 
-# Stats for Median_Household_Income_2018 / Estadísticas para Median_Household_Income_2018
 
+# Outlier detection for Median_Household_Income_2018 / Valores atípicos para 'Median_Household_Income_2018'
+
+# Stats for Median_Household_Income_2018 / Estadísticas para Median_Household_Income_2018
 income_stats = total_data["Median_Household_Income_2018"].describe()
 income_stats
 
 # IQR for Median_Household_Income_2018 / Rango intercuartílico para Median_Household_Income_2018
-
 income_iqr = income_stats["75%"] - income_stats["25%"]
 upper_limit = income_stats["75%"] + 1.5 * income_iqr
 lower_limit = income_stats["25%"] - 1.5 * income_iqr
 
 print(f"The upper and lower limits for finding outliers are {round(upper_limit, 2)} and {round(lower_limit, 2)}, with an interquartile range of {round(income_iqr, 2)}")
 
-# Stats for Unemployment_rate_2018 / Estadísticas para Unemployment_rate_2018
 
+# Outlier detection for Unemployment_rate_2018 / Valores atípicos para 'Unemployment_rate_2018'
+
+# Stats for Unemployment_rate_2018 / Estadísticas para Unemployment_rate_2018
 unemp_stats = total_data["Unemployment_rate_2018"].describe()
 unemp_stats
 
 # IQR for Unemployment_rate_2018 / Rango intercuartílico para Unemployment_rate_2018
-
 unemp_iqr = unemp_stats["75%"] - unemp_stats["25%"]
 upper_limit = unemp_stats["75%"] + 1.5 * unemp_iqr
 lower_limit = unemp_stats["25%"] - 1.5 * unemp_iqr
 
 print(f"The upper and lower limits for finding outliers are {round(upper_limit, 2)} and {round(lower_limit, 2)}, with an interquartile range of {round(unemp_iqr, 2)}")
 
+
+# Missing value analysis / Analisis de valores nulos.
+
 # Count NaN values / Contar valores NaN
 total_data.isnull().sum().sort_values(ascending = False)
 
-from sklearn.preprocessing import MinMaxScaler
+
+# Feature scaling / Escalamiento de caracteristicas.
 
 num_variables = [col for col in total_data.columns if col != "anycondition_prevalence"]
 scaler = MinMaxScaler()
@@ -331,8 +357,8 @@ df_scal = pd.DataFrame(scal_features, index = total_data.index, columns = num_va
 df_scal["anycondition_prevalence"] = total_data["anycondition_prevalence"]
 df_scal.head()
 
-from sklearn.feature_selection import chi2, SelectKBest
-from sklearn.model_selection import train_test_split
+
+# Step 6: Feature selection / Seleccion de caracteristicas.
 
 X = df_scal.drop("anycondition_prevalence", axis = 1)
 y = df_scal["anycondition_prevalence"]
@@ -355,12 +381,22 @@ X_test_sel = pd.DataFrame(
 )
 X_train_sel.head()
 
+
+# Save the clean and raw data / Guardar la data cruda y limpia.
+
+X_train_sel["anycondition_prevalence"] = list(y_train)
+X_test_sel["anycondition_prevalence"]  = list(y_test)
+X_train_sel.to_csv("../data/processed/clean_train.csv", index = False)
+X_test_sel.to_csv("../data/processed/clean_test.csv",   index = False)
+
+
+# Linear Regression / Aplicación de Regresión Lineal.
+
 # Load train and test datasets / Cargar los conjuntos de datos de entrenamiento y prueba
 train_data = pd.read_csv("../data/processed/clean_train.csv")
 test_data  = pd.read_csv("../data/processed/clean_test.csv")
 
 train_data.head()
-
 
 # Visualization of features vs anycondition_prevalence / Visualización de características vs anycondition_prevalence
 total_data_lr = pd.concat([train_data, test_data])
@@ -378,7 +414,6 @@ plt.tight_layout()
 plt.show()
 
 # Split features and target variable / Separar características y variable objetivo
-
 X_train = train_data.drop(["anycondition_prevalence"], axis = 1)
 y_train = train_data["anycondition_prevalence"]
 X_test  = test_data.drop(["anycondition_prevalence"], axis = 1)
@@ -389,23 +424,154 @@ model = LinearRegression()
 model.fit(X_train, y_train)
 
 # Model parameters / Parámetros del modelo
-
 print(f"Intercepto (a): {model.intercept_}")
 for feature, coef in zip(X_train.columns, model.coef_):
     print(f"Coeficiente {feature}: {coef}")
 
-    # Predictions / Predicciones
-
+# Predictions / Predicciones
 y_pred = model.predict(X_test)
 y_pred
 
 # Model evaluation / Evaluación del modelo
-
 print(f"Error cuadrático medio: {mean_squared_error(y_test, y_pred)}")
 print(f"Coeficiente de determinación: {r2_score(y_test, y_pred)}")
-
 
 # As R² = 0.6852939531042808, the value is very close to the acceptable between 0.7 & 1.0. Still a trustable model. / 
 # Como R² = 0,6852939531042808, el valor está muy cerca del rango aceptable entre 0,7 y 1,0. Sigue siendo un modelo fiable. 
 
+#Due to the number of variables and the potential for overfitting, the next step is to create a regularized linear Lasso model. /
+#Debido a la cantidad de variables y al posible sobreajuste, el siguiente paso es crear un modelo lineal regularizado de Lasso.
 
+
+# Lasso Regularization / Regularización Lasso
+# Lasso adds a penalty to the model proportional to the absolute value of each coefficient (L1 norm).
+# This forces irrelevant features to exactly zero, acting as automatic feature selection.
+# Lasso añade una penalización proporcional al valor absoluto de cada coeficiente (norma L1).
+# Esto fuerza las variables irrelevantes a exactamente cero, actuando como selección automática.
+
+# Load train and test datasets / Cargar los conjuntos de datos de entrenamiento y prueba
+train_data = pd.read_csv("../data/processed/clean_train.csv")
+test_data  = pd.read_csv("../data/processed/clean_test.csv")
+
+X_train = train_data.drop(["anycondition_prevalence"], axis = 1)
+y_train = train_data["anycondition_prevalence"]
+X_test  = test_data.drop(["anycondition_prevalence"], axis = 1)
+y_test  = test_data["anycondition_prevalence"]
+
+
+# Sweep alpha from 0 to 20 / Barrer alpha de 0 a 20
+# alpha=0 behaves like plain Linear Regression (no penalty).
+# As alpha grows, more coefficients are forced to zero.
+# alpha=0 se comporta como Regresión Lineal pura (sin penalización).
+# A medida que alpha crece, más coeficientes son forzados a cero.
+
+alphas     = range(0, 21)
+r2_scores  = []
+mse_scores = []
+
+for alpha in alphas:
+    if alpha == 0:
+        # alpha=0 is plain Linear Regression / alpha=0 es Regresión Lineal pura
+        model = LinearRegression()
+    else:
+        model = Lasso(alpha = alpha, max_iter = 10000)
+
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+
+    r2_scores.append(r2_score(y_test, y_pred))
+    mse_scores.append(mean_squared_error(y_test, y_pred))
+
+# Collect results / Recopilar resultados
+results_df = pd.DataFrame({
+    "alpha" : list(alphas),
+    "R2"    : r2_scores,
+    "MSE"   : mse_scores
+})
+
+print(results_df.to_string(index = False))
+
+
+# Visualize R² and MSE across alpha values / Visualizar R² y MSE según alpha
+
+fig, axis = plt.subplots(1, 2, figsize = (14, 5))
+
+axis[0].plot(results_df["alpha"], results_df["R2"], marker = "o", linewidth = 2)
+axis[0].set_xlabel("Alpha")
+axis[0].set_ylabel("R²")
+axis[0].set_title("R² vs Alpha")
+axis[0].set_xticks(list(alphas))
+
+axis[1].plot(results_df["alpha"], results_df["MSE"], marker = "o", color = "orange", linewidth = 2)
+axis[1].set_xlabel("Alpha")
+axis[1].set_ylabel("MSE")
+axis[1].set_title("MSE vs Alpha")
+axis[1].set_xticks(list(alphas))
+
+plt.tight_layout()
+plt.show()
+
+
+# Identify the best alpha / Identificar el mejor alpha
+# Best alpha = highest R² (or equivalently, lowest MSE).
+# Mejor alpha = mayor R² (o equivalentemente, menor MSE).
+
+best_alpha = results_df.loc[results_df["R2"].idxmax(), "alpha"]
+best_r2    = results_df.loc[results_df["R2"].idxmax(), "R2"]
+best_mse   = results_df.loc[results_df["R2"].idxmax(), "MSE"]
+
+print(f"Mejor alpha: {best_alpha}")
+print(f"R² con ese alpha: {round(best_r2, 4)}")
+print(f"MSE con ese alpha: {round(best_mse, 4)}")
+
+
+# Train final Lasso with the best alpha / Entrenar Lasso final con el mejor alpha
+
+lasso_model = Lasso(alpha = best_alpha, max_iter = 10000)
+lasso_model.fit(X_train, y_train)
+
+print(f"Intercepto (a): {round(lasso_model.intercept_, 4)}")
+print()
+for feature, coef in zip(X_train.columns, lasso_model.coef_):
+    status = "  <- ELIMINADA por Lasso" if coef == 0 else ""
+    print(f"  {feature}: {round(coef, 6)}{status}")
+
+
+# Predictions and evaluation / Predicciones y evaluación
+
+y_pred_lasso = lasso_model.predict(X_test)
+
+print(f"Error cuadrático medio (Lasso): {mean_squared_error(y_test, y_pred_lasso)}")
+print(f"Coeficiente de determinación (Lasso): {r2_score(y_test, y_pred_lasso)}")
+
+
+# Compare Linear Regression vs Lasso / Comparar Regresión Lineal vs Lasso
+# A good Lasso model should have a similar or better R² than Linear Regression,
+# while using fewer variables — simpler and more generalizable.
+# Un buen modelo Lasso debe tener un R² similar o mejor que la Regresión Lineal,
+# usando menos variables — más simple y generalizable.
+
+linear_model = LinearRegression()
+linear_model.fit(X_train, y_train)
+y_pred_linear = linear_model.predict(X_test)
+
+mse_linear = mean_squared_error(y_test, y_pred_linear)
+r2_linear  = r2_score(y_test, y_pred_linear)
+
+n_features_linear = X_train.shape[1]
+n_features_lasso  = np.sum(lasso_model.coef_ != 0)
+
+print("-" * 52)
+print(f"{'Modelo':<25} {'MSE':>10} {'R2':>8} {'Variables':>10}")
+print("-" * 52)
+print(f"{'Regresion Lineal':<25} {round(mse_linear, 4):>10} {round(r2_linear, 4):>8} {n_features_linear:>10}")
+print(f"{'Lasso':<25} {round(mean_squared_error(y_test, y_pred_lasso), 4):>10} {round(r2_score(y_test, y_pred_lasso), 4):>8} {n_features_lasso:>10}")
+print("-" * 52)
+
+# El modelo de regresión lineal base (alpha=0) obtiene el mayor R² y el menor MSE de toda la búsqueda.
+# Al incrementar alpha de 0 a 20, el R² desciende de forma sostenida y el MSE aumenta, lo que indica
+# que la penalización Lasso perjudica el modelo en este caso. Esto se explica porque el proceso previo
+# de limpieza y selección de variables (de 108 a 10 features mediante SelectKBest con chi2) ya eliminó
+# las variables irrelevantes y redundantes, dejando únicamente predictores con capacidad explicativa real.
+# En ausencia de sobreajuste, la regularización introduce bias innecesario sin reducir la varianza,
+# por lo que el modelo óptimo es la regresión lineal sin penalización.
